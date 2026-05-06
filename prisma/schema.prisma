@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String      @id @default(uuid())
+  name          String
+  email         String      @unique
+  password      String
+  phone         String?
+  bio           String?
+  instagram     String?
+  facebook      String?
+  notifications Json?
+  role          Role        @default(TRAVELER)
+  createdAt     DateTime    @default(now())
+  host          Host?
+  reels         Reel[]
+  blogs         Blog[]
+  Booking       Booking[]
+  trips         Trip[]
+  savedHosts    SavedHost[]
+  grievances    Grievance[]
+  invoices      Invoice[]
+  streaks       Streak[]
+}
+
+model Host {
+  id            String       @id @default(uuid())
+  userId        String       @unique
+  city          String
+  bio           String
+  tagline       String?
+  image         String?
+  rating        Float        @default(0)
+  reviewCount   Int          @default(0)
+  services      String[]
+  languages     String[]
+  pricePerDay   Int?
+  verified      Boolean      @default(false)
+  safetyScore   Int          @default(0)
+  responseTime  String?
+  specialties   String[]
+  expertiseTags String[]
+  introVideoUrl String?
+  stayInfo      Json?
+  transportInfo Json?
+  foodInfo      Json?
+  user          User         @relation(fields: [userId], references: [id])
+  bookings      Booking[]
+  experiences   Experience[]
+  savedHosts    SavedHost[]
+}
+
+model Experience {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  image       String?
+  price       Float
+  duration    String?
+  category    String
+  difficulty  String
+  groupSize   Int
+  highlights  String[]
+  rating      Float     @default(4.5)
+  reviewCount Int       @default(0)
+  hostId      String
+  host        Host      @relation(fields: [hostId], references: [id])
+  bookings    Booking[]
+}
+
+model Destination {
+  id             String   @id @default(uuid())
+  name           String
+  state          String
+  tagline        String?
+  description    String?
+  bestSeason     String?
+  avgTemp        String?
+  highlights     String[]
+  experienceTags String[]
+  hostCount      Int      @default(0)
+  sites          Json?
+}
+
+model Booking {
+  id           String        @id @default(uuid())
+  travelerId   String
+  hostId       String
+  experienceId String
+  startDate    DateTime
+  endDate      DateTime
+  status       BookingStatus
+  totalPrice   Float
+  traveler     User          @relation(fields: [travelerId], references: [id])
+  host         Host          @relation(fields: [hostId], references: [id])
+  experience   Experience    @relation(fields: [experienceId], references: [id])
+  review       Review?
+}
+
+model Review {
+  id        String  @id @default(uuid())
+  bookingId String  @unique
+  rating    Int
+  text      String
+  videoUrl  String?
+  booking   Booking @relation(fields: [bookingId], references: [id])
+}
+
+model Reel {
+  id       String   @id @default(uuid())
+  caption  String
+  hashtags String[]
+  likes    Int      @default(0)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id])
+}
+
+model Blog {
+  id       String @id @default(uuid())
+  title    String
+  content  String
+  category String
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+}
+
+model Trip {
+  id                 String    @id @default(uuid())
+  title              String
+  description        String?
+  tripType           String
+  nature             String
+  destination        String
+  city               String?
+  route              String?
+  duration           String?
+  maxTravelers       Int
+  totalPrice         Float
+  priceModel         String
+  includesFood       Boolean
+  includesStay       Boolean
+  includesActivities Boolean
+  includesTransport  Boolean
+  tripDirection      String
+  highlights         String[]
+  inclusions         String[]
+  startDate          DateTime?
+  endDate            DateTime?
+  status             String    @default("pending")
+  creatorId          String
+  creator            User      @relation(fields: [creatorId], references: [id])
+  createdAt          DateTime  @default(now())
+}
+
+model SavedHost {
+  id        String   @id @default(uuid())
+  userId    String
+  hostId    String
+  user      User     @relation(fields: [userId], references: [id])
+  host      Host     @relation(fields: [hostId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, hostId])
+}
+
+model Grievance {
+  id          String   @id @default(uuid())
+  userId      String
+  subject     String
+  description String
+  category    String
+  status      String   @default("open")
+  resolution  String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Invoice {
+  id            String    @id @default(uuid())
+  userId        String
+  invoiceNumber String
+  totalAmount   Float
+  taxAmount     Float
+  currency      String    @default("INR")
+  status        String
+  issuedAt      DateTime  @default(now())
+  paidAt        DateTime?
+  user          User      @relation(fields: [userId], references: [id])
+}
+
+model Streak {
+  id        String   @id @default(uuid())
+  userId    String
+  month     DateTime
+  completed Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  TRAVELER
+  HOST
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
