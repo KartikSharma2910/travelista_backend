@@ -1,24 +1,27 @@
-# Backend Dockerfile
 FROM node:18-alpine
 
 WORKDIR /app
 
+# Install OpenSSL (VERY IMPORTANT for Prisma)
+RUN apk add --no-cache openssl
+
 # Copy package files
 COPY package*.json ./
 
-# Copy prisma schema BEFORE npm ci
+# Install dependencies
+RUN npm install
+
+# Copy prisma schema
 COPY prisma ./prisma
 
-# Install dependencies
-RUN npm ci
-
 # Generate Prisma client
-RUN npm run prisma:generate
+RUN npx prisma generate
 
-# Copy application
-COPY src ./src
+# Copy full app
+COPY . .
 
+# Expose port
 EXPOSE 5000
 
-# Run migrations and start server
-CMD ["sh", "-c", "npm run prisma:migrate && npm start"]
+# Run migrations + start server
+CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
